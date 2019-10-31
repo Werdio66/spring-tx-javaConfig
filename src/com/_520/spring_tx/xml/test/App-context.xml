@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        https://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        https://www.springframework.org/schema/aop/spring-aop.xsd
+
+">
+
+    <!--    DI注解    -->
+    <context:annotation-config/>
+
+    <context:component-scan base-package="com._520.spring_tx"/>
+
+    <context:property-placeholder location="classpath:db.properties" system-properties-mode="NEVER"/>
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <bean id="accountDAO" class="com._520.spring_tx.xml.dao.impl.AccountDAOImpl">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <bean id="accountServlet" class="com._520.spring_tx.xml.service.impl.AccountServletImpl">
+        <property name="dao" ref="accountDAO"/>
+    </bean>
+
+
+
+    <!---   what 配置事务管理器      -->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--    when 配置事务增强    -->
+    <tx:advice id="txAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="trans"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--    where 什么地方做增强    -->
+    <aop:config>
+        <aop:pointcut id="txPoint" expression="execution(* com._520.spring_tx.xml.service.*Service.*(..))"/>
+        <!--    -->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPoint"/>
+    </aop:config>
+</beans>
